@@ -23,19 +23,19 @@ class User(Base):
         primary_key=True,
         server_default=text("gen_random_uuid()"),
     )
-    email: Mapped[str] = mapped_column(
-        String(255),
-        unique=True,
-        nullable=False,
+    email: Mapped[str | None] = mapped_column(
+    String(255),
+    unique=True,
+    nullable=True,
     )
     phone: Mapped[str | None] = mapped_column(
         String(20),
         unique=True,
         nullable=True,
     )
-    password_hash: Mapped[str] = mapped_column(
-        Text,
-        nullable=False,
+    password_hash: Mapped[str | None] = mapped_column(
+       Text,
+       nullable=True,
     )
     is_active: Mapped[bool] = mapped_column(
         nullable=False,

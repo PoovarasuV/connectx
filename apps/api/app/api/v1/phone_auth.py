@@ -12,6 +12,7 @@ from app.schemas.phone_auth import (
     VerifyOTPResponse,
 )
 from app.services.otp import create_otp, verify_otp_for_phone
+from app.services.phone import normalize_phone_number
 
 
 router = APIRouter(
@@ -28,9 +29,19 @@ def request_otp(
     request: RequestOTPRequest,
     db: Session = Depends(get_db),
 ):
+    try:
+        normalized_phone = normalize_phone_number(
+            request.phone_number
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+
     otp = create_otp(
         db=db,
-        phone_number=request.phone_number,
+        phone_number=normalized_phone,
     )
 
     return RequestOTPResponse(
@@ -46,9 +57,19 @@ def verify_otp(
     request: VerifyOTPRequest,
     db: Session = Depends(get_db),
 ):
+    try:
+        normalized_phone = normalize_phone_number(
+            request.phone_number
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+
     is_valid = verify_otp_for_phone(
         db=db,
-        phone_number=request.phone_number,
+        phone_number=normalized_phone,
         otp=request.otp,
     )
 
@@ -59,12 +80,14 @@ def verify_otp(
         )
 
     user = db.scalar(
-        select(User).where(User.phone == request.phone_number)
+        select(User).where(
+            User.phone == normalized_phone
+        )
     )
 
     if user is None:
         user = User(
-            phone=request.phone_number,
+            phone=normalized_phone,
         )
 
         db.add(user)
@@ -85,3 +108,4 @@ def verify_otp(
         user_id=str(user.id),
         phone_number=user.phone,
     )
+

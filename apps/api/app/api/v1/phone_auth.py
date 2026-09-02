@@ -11,7 +11,11 @@ from app.schemas.phone_auth import (
     VerifyOTPRequest,
     VerifyOTPResponse,
 )
-from app.services.otp import create_otp, verify_otp_for_phone
+from app.services.otp import (
+    check_otp_request_rate_limit,
+    create_otp,
+    verify_otp_for_phone,
+)
 from app.services.phone import normalize_phone_number
 
 
@@ -37,6 +41,15 @@ def request_otp(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),
+        )
+
+    if not check_otp_request_rate_limit(
+        db=db,
+        phone_number=normalized_phone,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many OTP requests. Please try again later.",
         )
 
     otp = create_otp(

@@ -1,14 +1,18 @@
 import uuid
+
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Integer, String, func
+
 from sqlalchemy.dialects.postgresql import UUID
+
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.database import Base
 
 
 class PhoneOTP(Base):
+
     __tablename__ = "phone_otps"
 
     id: Mapped[uuid.UUID] = mapped_column(

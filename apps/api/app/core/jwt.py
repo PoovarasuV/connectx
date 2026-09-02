@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
+from uuid import uuid4
 
 from fastapi import HTTPException, status
+
 from jose import JWTError, jwt
 
 from app.config import settings
@@ -13,6 +15,7 @@ def create_access_token(user_id: str) -> str:
 
     payload = {
         "sub": user_id,
+        "jti": str(uuid4()),
         "exp": expires_at,
         "type": "access",
     }
@@ -24,7 +27,7 @@ def create_access_token(user_id: str) -> str:
     )
 
 
-def verify_access_token(token: str) -> str:
+def verify_access_token(token: str) -> tuple[str, str]:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials.",
@@ -40,11 +43,17 @@ def verify_access_token(token: str) -> str:
 
         user_id = payload.get("sub")
         token_type = payload.get("type")
+        token_jti = payload.get("jti")
 
-        if user_id is None or token_type != "access":
+        if (
+            user_id is None
+            or token_type != "access"
+            or token_jti is None
+        ):
             raise credentials_exception
 
-        return user_id
+        return user_id, token_jti
 
     except JWTError:
         raise credentials_exception
+
